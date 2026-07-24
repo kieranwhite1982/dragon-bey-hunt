@@ -37,6 +37,28 @@ function findOptional(stem) {
    synthesis) for any index that doesn't, so partial coverage is fine. */
 const SCRIPT_VIDEO_KEYS = ['script-0', 'script-1', 'script-2', 'script-3', 'script-4', 'script-5'];
 
+/* Artwork for the five Bey parts, keyed to `part.key` in data/stages.js:
+   public/part-ratchet.*, part-energy.*, part-chip.*, part-disc.*,
+   part-driver.*. Any part without a file keeps its emoji (see PartIcon). */
+const PART_KEYS = ['ratchet', 'energy', 'chip', 'disc', 'driver'];
+
+function findPartImages() {
+  let files;
+  try {
+    files = fs.readdirSync(PUBLIC_DIR);
+  } catch {
+    return {};
+  }
+  const map = {};
+  for (const key of PART_KEYS) {
+    const hit = files
+      .filter((f) => f.toLowerCase().startsWith(`part-${key}.`) && /\.(png|jpe?g|webp|gif)$/i.test(f))
+      .sort()[0];
+    if (hit) map[key] = hit;
+  }
+  return map;
+}
+
 function findScriptVideos() {
   let files;
   try {
@@ -122,6 +144,8 @@ export default defineConfig({
     __WYRM_SMASH__: JSON.stringify(findOptional('wyrm-smash')),
     __IGNIS_VICTORY__: JSON.stringify(findOptional('ignis-victory')),
     __SCRIPT_VIDEOS__: JSON.stringify(findScriptVideos()),
+    __PART_IMAGES__: JSON.stringify(findPartImages()),
+    __BEY_ASSEMBLED__: JSON.stringify(findOptional('bey-assembled')),
   },
   build: {
     target: 'es2018',

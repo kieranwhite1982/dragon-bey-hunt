@@ -4,7 +4,7 @@ import { STAGES } from './data/stages.js';
 import useAudio from './audio/useAudio.js';
 import useWakeLock from './hooks/useWakeLock.js';
 import { clearRun, loadRun, saveRun } from './hooks/useSavedRun.js';
-import { IGNIS_INTRO, IGNIS_PORTRAIT, WYRM_SMASH, IGNIS_VICTORY } from './optionalAssets.js';
+import { BEY_ASSEMBLED, IGNIS_INTRO, IGNIS_PORTRAIT, WYRM_SMASH, IGNIS_VICTORY } from './optionalAssets.js';
 
 import Dragon from './components/Dragon.jsx';
 import FloorMap from './components/FloorMap.jsx';
@@ -15,6 +15,7 @@ import Narrator from './components/Narrator.jsx';
 import Confetti from './components/Confetti.jsx';
 import ParentPanel from './components/ParentPanel.jsx';
 import TitleScreen from './components/TitleScreen.jsx';
+import PartIcon from './components/PartIcon.jsx';
 import IgnisIntro from './components/IgnisIntro.jsx';
 import VideoCutscene from './components/VideoCutscene.jsx';
 
@@ -233,9 +234,22 @@ export default function App() {
     return shell(
       <div className="flex-1 relative flex flex-col items-center justify-center px-6 text-center overflow-hidden">
         <Confetti run />
-        {/* Ignis himself sees them off rather than a bare trophy emoji; the
-            portrait is optional everywhere else, so it falls back here too. */}
-        {IGNIS_PORTRAIT ? (
+        {/* The finished Bey they spent the whole hunt assembling, if that art
+            exists; otherwise Ignis sees them off; otherwise a trophy. All
+            three are optional, same as every other asset in the app. */}
+        {BEY_ASSEMBLED ? (
+          <div
+            className="floaty relative rounded-full overflow-hidden"
+            style={{
+              width: 140,
+              height: 140,
+              border: `4px solid ${C.gold}`,
+              boxShadow: `0 0 46px ${C.ember}`,
+            }}
+          >
+            <img src={BEY_ASSEMBLED} alt="" className="w-full h-full object-cover" />
+          </div>
+        ) : IGNIS_PORTRAIT ? (
           <div
             className="floaty relative rounded-full overflow-hidden"
             style={{
@@ -267,10 +281,11 @@ export default function App() {
           {parts.map((p, i) => (
             <div
               key={i}
-              className="px-3 py-2 rounded-xl font-black text-xs"
+              className="px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5"
               style={{ background: p.color, color: '#1a0b2e' }}
             >
-              {p.emoji} {p.name}
+              <PartIcon part={p} size={18} ring={false} />
+              {p.name}
             </div>
           ))}
         </div>
@@ -302,14 +317,16 @@ export default function App() {
             {STAGES.map((s, i) => (
               <div
                 key={s.n}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-black"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-black overflow-hidden"
                 style={{
                   background: i < parts.length ? parts[i].color : 'rgba(255,255,255,0.12)',
                   color: i < parts.length ? '#1a0b2e' : 'rgba(255,255,255,0.4)',
                   border: i === stageIdx ? `2px solid ${C.gold}` : '2px solid transparent',
                 }}
               >
-                {i < parts.length ? parts[i].emoji : s.n}
+                {/* 22, not 26: the w-7 box has a 2px border, leaving 24px of
+                    content, and a 26px icon would be clipped by overflow. */}
+                {i < parts.length ? <PartIcon part={parts[i]} size={22} ring={false} /> : s.n}
               </div>
             ))}
           </div>
@@ -436,7 +453,9 @@ export default function App() {
       {step === 'reward' && (
         <div className="flex-1 relative flex flex-col items-center justify-center px-6 text-center overflow-hidden">
           <Confetti run />
-          <div className="text-7xl pop relative">{stage.part.emoji}</div>
+          <div className="pop relative">
+            <PartIcon part={stage.part} size={112} />
+          </div>
           <h2
             className="font-black text-3xl mt-2 pop relative"
             style={{ color: stage.part.color, textShadow: '2px 2px 0 rgba(0,0,0,0.4)' }}
@@ -461,10 +480,10 @@ export default function App() {
             {STAGES.map((s, i) => (
               <div
                 key={s.n}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-lg overflow-hidden"
                 style={{ background: i < parts.length ? parts[i].color : 'rgba(255,255,255,0.12)' }}
               >
-                {i < parts.length ? parts[i].emoji : '·'}
+                {i < parts.length ? <PartIcon part={parts[i]} size={34} ring={false} /> : '·'}
               </div>
             ))}
           </div>

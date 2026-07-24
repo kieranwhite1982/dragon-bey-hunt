@@ -17,6 +17,8 @@ const wyrmFile = typeof __WYRM_PORTRAIT__ === 'undefined' ? null : __WYRM_PORTRA
 const wyrmSmashFile = typeof __WYRM_SMASH__ === 'undefined' ? null : __WYRM_SMASH__;
 const victoryFile = typeof __IGNIS_VICTORY__ === 'undefined' ? null : __IGNIS_VICTORY__;
 const scriptVideos = typeof __SCRIPT_VIDEOS__ === 'undefined' ? {} : __SCRIPT_VIDEOS__;
+const partImages = typeof __PART_IMAGES__ === 'undefined' ? {} : __PART_IMAGES__;
+const beyFile = typeof __BEY_ASSEMBLED__ === 'undefined' ? null : __BEY_ASSEMBLED__;
 
 const base = import.meta.env.BASE_URL || '/';
 
@@ -33,6 +35,15 @@ export const IGNIS_VICTORY = victoryFile ? base + victoryFile : null;
 export const SCRIPT_VIDEOS = Object.fromEntries(
   Object.entries(scriptVideos).map(([k, f]) => [k, base + f]),
 );
+
+/* Artwork per Bey part, keyed by `part.key` in data/stages.js. A part with
+   no entry keeps its emoji -- see components/PartIcon.jsx. */
+export const PART_IMAGES = Object.fromEntries(
+  Object.entries(partImages).map(([k, f]) => [k, base + f]),
+);
+
+/* The finished Bey, for the victory screen. Optional like everything else. */
+export const BEY_ASSEMBLED = beyFile ? base + beyFile : null;
 
 export const INTRO_IS_VIDEO =
   !!introFile && /\.(mp4|webm|m4v|mov|ogg)$/i.test(introFile);
