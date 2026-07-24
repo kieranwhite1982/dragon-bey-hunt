@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* No web fonts: the app must run with the wifi off, so everything falls back
+   to the platform UI stack (Roboto on the target Android device). */
+:root {
+  --dbh-night: #1a0b2e;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--dbh-night);
+  color: #fff;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
+/* Two fingers land on the seal pads at once; the browser must not decide that
+   is a pinch-zoom or a pull-to-refresh. */
+#root {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fill the phone properly in standalone mode, including under the gesture bar. */
+.dbh-viewport {
+  height: 100dvh;
+  height: 100svh;
+  min-height: 100%;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
+}

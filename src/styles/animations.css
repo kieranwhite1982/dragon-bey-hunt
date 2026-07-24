@@ -1,0 +1,277 @@
+@keyframes pulseA {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 0.75;
+  }
+}
+.pulse {
+  animation: pulseA 1s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+@keyframes bounceA {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+}
+.bounce {
+  animation: bounceA 0.7s ease-in-out infinite;
+}
+
+@keyframes shakeA {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-7px);
+  }
+  75% {
+    transform: translateX(7px);
+  }
+}
+.shake {
+  animation: shakeA 0.16s 3;
+}
+
+@keyframes floatA {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+}
+.floaty {
+  animation: floatA 2.6s ease-in-out infinite;
+}
+
+@keyframes popA {
+  0% {
+    transform: scale(0) rotate(-25deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.18) rotate(6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+.pop {
+  animation: popA 480ms cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+
+@keyframes glowA {
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgba(255, 107, 53, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 38px rgba(255, 107, 53, 0.95);
+  }
+}
+.glowy {
+  animation: glowA 1.4s ease-in-out infinite;
+}
+
+@keyframes bobA {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+.dragon-bob {
+  animation: bobA 2.4s ease-in-out infinite;
+}
+
+@keyframes flapL {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-16deg);
+  }
+}
+@keyframes flapR {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
+}
+.wing-l {
+  animation: flapL 1.1s ease-in-out infinite;
+  transform-origin: 76px 122px;
+}
+.wing-r {
+  animation: flapR 1.1s ease-in-out infinite;
+  transform-origin: 144px 122px;
+}
+
+@keyframes blinkA {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.08);
+  }
+}
+.dragon-blink {
+  animation: blinkA 4.5s ease-in-out infinite;
+  transform-origin: 110px 70px;
+}
+
+@keyframes jawA {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1.5);
+  }
+}
+.dragon-jaw {
+  animation: jawA 0.24s ease-in-out infinite;
+}
+
+@keyframes tailA {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+.dragon-tail {
+  animation: tailA 3.1s ease-in-out infinite;
+}
+
+@keyframes flameA {
+  0%,
+  52% {
+    transform: scaleY(0.04) scaleX(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scaleY(1.08) scaleX(1.05);
+    opacity: 1;
+  }
+  72% {
+    transform: scaleY(0.92) scaleX(0.95);
+    opacity: 1;
+  }
+  84% {
+    transform: scaleY(1.04) scaleX(1.02);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scaleY(0.04) scaleX(0.5);
+    opacity: 0;
+  }
+}
+.flame-a {
+  animation: flameA 3.6s ease-in-out infinite;
+}
+.flame-b {
+  animation: flameA 3.6s ease-in-out infinite 0.06s;
+}
+.flame-c {
+  animation: flameA 3.6s ease-in-out infinite 0.12s;
+}
+
+@keyframes emberA {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-6px, -70px) scale(0.2);
+    opacity: 0;
+  }
+}
+.ember-1 {
+  animation: emberA 3.2s linear infinite;
+}
+.ember-2 {
+  animation: emberA 3.8s linear infinite 0.7s;
+}
+.ember-3 {
+  animation: emberA 2.9s linear infinite 1.4s;
+}
+.ember-4 {
+  animation: emberA 4.1s linear infinite 2.1s;
+}
+
+@keyframes smokeA {
+  0% {
+    opacity: 0.5;
+    transform: translateY(0) scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-26px) scale(1.5);
+  }
+}
+.dragon-smoke {
+  animation: smokeA 1.6s ease-out infinite;
+}
+
+/* Portrait slot: a slow breathing scale so a still image does not read as
+   a frozen screenshot. */
+@keyframes breatheA {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.035) translateY(-6px);
+  }
+}
+.breathe {
+  animation: breatheA 5.2s ease-in-out infinite;
+}
+
+@keyframes slideUpA {
+  0% {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.slide-up {
+  animation: slideUpA 320ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

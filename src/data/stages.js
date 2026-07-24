@@ -1,0 +1,75 @@
+/* The rooms, gifts and hiding places are real. Do not reorder them:
+   the route uses the stairs exactly once and saves the garage for last so
+   the boys never walk past the finale on the way to something else. */
+
+export const STAGES = [
+  {
+    n: 1,
+    floor: 'up',
+    roomId: 'pantry',
+    roomName: "the Butler's Pantry",
+    spot: 'In the drawer with the plastic plates',
+    spotEmoji: '🍽️',
+    gift: 'Coding Spy Experiment Kit',
+    part: { name: 'THE RATCHET', emoji: '⚙️', color: '#22d3ee' },
+    taunt: 'I smell something sneaky where the food is kept!',
+    hint: 'The little room at the TOP of the map, next to the kitchen.',
+  },
+  {
+    n: 2,
+    floor: 'up',
+    roomId: 'laundry',
+    roomName: 'the Laundry',
+    spot: 'In the cupboard where the cat food lives',
+    spotEmoji: '🐱',
+    gift: 'Snap Circuits Junior',
+    part: { name: 'THE ENERGY LAYER', emoji: '⚡', color: '#a3e635' },
+    taunt: 'Something is BUZZING with power near the washing machine…',
+    hint: 'Left side of the map — the room with the washing machine.',
+  },
+  {
+    n: 3,
+    floor: 'up',
+    roomId: 'study',
+    roomName: 'the Study',
+    spot: 'Sitting right on the chair',
+    spotEmoji: '🪑',
+    gift: 'Apitor Robot J',
+    part: { name: 'THE BIT CHIP', emoji: '🧠', color: '#ff2e63' },
+    taunt: 'The brain of the Bey is hidden where the thinking happens!',
+    hint: 'Bottom left of the map — the room with the desk.',
+  },
+  {
+    n: 4,
+    floor: 'down',
+    roomId: 'lounge',
+    roomName: 'the Movie Room',
+    spot: 'Beside the couch, next to the lamp',
+    spotEmoji: '🛋️',
+    gift: 'Small World',
+    part: { name: 'THE FORGE DISC', emoji: '💿', color: '#ffc94a' },
+    taunt: 'DOWN THE STAIRS! The Shadow Wyrm flew to the bottom floor!',
+    hint: 'Downstairs, out of the hall, into the big Movie Room.',
+  },
+  {
+    n: 5,
+    floor: 'down',
+    roomId: 'garage',
+    roomName: 'THE GARAGE',
+    spot: "In the car — on the driver's seat!",
+    spotEmoji: '🚗',
+    gift: 'Smart Watch',
+    part: { name: 'THE DRAGON DRIVER', emoji: '🔥', color: '#ff6b35' },
+    taunt: 'The last part is in the GARAGE. Be brave, Bladers.',
+    hint: 'From the hall, through the DOOR into the huge garage.',
+  },
+];
+
+export const SCRIPT = [
+  'RRRAAAWWR! I am Ignis, guardian of the Dragon Beyblade.',
+  'A Shadow Wyrm smashed my Beyblade into FIVE PARTS and hid them in YOUR house!',
+  'Evan — you are the Blader. Read my map, tap the glowing room, then RUN there!',
+  'Sawyer — you are the Radar Tech. HOLD the radar button to sniff out the exact hiding spot!',
+  'Every part is hidden inside a treasure. When you find it, BOTH of you hold the Dragon Seal together.',
+  'Find all five parts... then meet me in the GARAGE for the final battle. GO!',
+];

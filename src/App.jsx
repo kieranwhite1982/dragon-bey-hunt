@@ -1,0 +1,461 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+import { STAGES, SCRIPT } from './data/stages.js';
+import useAudio from './audio/useAudio.js';
+import { speakLine, stopSpeaking, useVoiceStatus } from './audio/speech.js';
+import useWakeLock from './hooks/useWakeLock.js';
+import { clearRun, loadRun, saveRun, usePrefs } from './hooks/useSavedRun.js';
+import { IGNIS_INTRO } from './optionalAssets.js';
+
+import Dragon from './components/Dragon.jsx';
+import FloorMap from './components/FloorMap.jsx';
+import RadarPad from './components/RadarPad.jsx';
+import SealPads from './components/SealPads.jsx';
+import Battle from './components/Battle.jsx';
+import Narrator from './components/Narrator.jsx';
+import Confetti from './components/Confetti.jsx';
+import ParentPanel from './components/ParentPanel.jsx';
+import TitleScreen from './components/TitleScreen.jsx';
+import IgnisIntro from './components/IgnisIntro.jsx';
+
+import { C } from './theme.js';
+
+const STUCK_MS = 60000;
+
+export default function App() {
+  const audio = useAudio();
+  const [screen, setScreen] = useState('title');
+  const [stageIdx, setStageIdx] = useState(0);
+  const [step, setStep] = useState('navigate');
+  const [floor, setFloor] = useState('up');
+  const [wrongId, setWrongId] = useState(null);
+  const [showArrow, setShowArrow] = useState(false);
+  const [parts, setParts] = useState([]);
+  const [parent, setParent] = useState(false);
+
+  const { voiceOn, setVoiceOn } = usePrefs();
+  const voiceCount = useVoiceStatus();
+  const [saved, setSaved] = useState(() => loadRun());
+  const tapRef = useRef(0);
+  const tapTimer = useRef(null);
+
+  const stage = STAGES[stageIdx];
+
+  /* Keep the screen awake once the hunt is actually running. */
+  useWakeLock(screen === 'hunt' || screen === 'battle');
+
+  /* Sixty seconds stuck on one room and a big pulsing arrow appears.
+     Deliberately generous — the point is to rescue a stall, not to nag. */
+  useEffect(() => {
+    if (screen !== 'hunt' || step !== 'navigate') {
+      setShowArrow(false);
+      return undefined;
+    }
+    setShowArrow(false);
+    const id = setTimeout(() => setShowArrow(true), STUCK_MS);
+    return () => clearTimeout(id);
+  }, [screen, step, stageIdx]);
+
+  useEffect(() => () => stopSpeaking(), []);
+  useEffect(() => () => clearTimeout(tapTimer.current), []);
+
+  /* Autosave. If the phone locks or the tab is evicted mid-hunt, the title
+     screen offers a resume rather than restarting with presents already
+     unwrapped. */
+  useEffect(() => {
+    if (screen === 'hunt' || screen === 'battle') {
+      saveRun({ screen, stageIdx, step, floor, parts });
+    }
+  }, [screen, stageIdx, step, floor, parts]);
+
+  const pickRoom = (id) => {
+    if (step !== 'navigate') return;
+    if (id === stage.roomId) {
+      audio.blip(900, 0.12, 'square', 0.2);
+      setTimeout(() => audio.blip(1300, 0.16, 'square', 0.2), 110);
+      setWrongId(null);
+      speakLine(`Yes! Run to ${stage.roomName}!`, voiceOn);
+      setStep('radar');
+    } else {
+      /* Wrong room shakes and grumbles. No penalty — guessing is half the
+         fun and a 6-year-old will tap everything. */
+      audio.grumble();
+      setWrongId(id);
+      setTimeout(() => setWrongId(null), 500);
+    }
+  };
+
+  const onFound = useCallback(() => {
+    speakLine(stage.spot, voiceOn);
+    setStep('grab');
+  }, [stage, voiceOn]);
+
+  const onSealBroken = useCallback(() => {
+    setParts((p) => [...p, stage.part]);
+    setStep('reward');
+  }, [stage]);
+
+  const nextStage = () => {
+    stopSpeaking();
+    if (stageIdx === STAGES.length - 1) {
+      setScreen('battle');
+    } else {
+      const ni = stageIdx + 1;
+      setStageIdx(ni);
+      setFloor(STAGES[ni].floor);
+      setStep('navigate');
+      audio.spinUp(0.8);
+    }
+  };
+
+  const titleTap = () => {
+    tapRef.current += 1;
+    if (tapRef.current >= 4) {
+      tapRef.current = 0;
+      setParent(true);
+    }
+    clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => {
+      tapRef.current = 0;
+    }, 1600);
+  };
+
+  const resetAll = () => {
+    stopSpeaking();
+    clearRun();
+    setSaved(null);
+    setScreen('title');
+    setStageIdx(0);
+    setParts([]);
+    setStep('navigate');
+    setFloor('up');
+    setParent(false);
+  };
+
+  const beginHunt = () => {
+    /* Everything that needs a user gesture rides this one tap: the audio
+       context unlock and the very first speech line. */
+    audio.unlock();
+    audio.roar(1.2);
+    speakLine(SCRIPT[0], voiceOn);
+    setScreen(IGNIS_INTRO ? 'coldopen' : 'brief');
+  };
+
+  const continueRun = () => {
+    if (!saved) return;
+    audio.unlock();
+    audio.roar(0.9);
+    setStageIdx(saved.stageIdx);
+    setStep(saved.step || 'navigate');
+    setFloor(saved.floor || STAGES[saved.stageIdx].floor);
+    setParts(saved.parts || []);
+    setScreen(saved.screen);
+  };
+
+  const shell = (children) => (
+    <div
+      className="dbh-viewport w-full flex flex-col relative overflow-hidden"
+      style={{ background: `radial-gradient(circle at 50% 0%, ${C.night2}, ${C.night} 70%)` }}
+    >
+      {children}
+      {parent && (
+        <ParentPanel
+          onClose={() => setParent(false)}
+          voiceOn={voiceOn}
+          setVoiceOn={setVoiceOn}
+          voiceCount={voiceCount}
+          onReset={resetAll}
+          onJump={(i) => {
+            setStageIdx(i);
+            setFloor(STAGES[i].floor);
+            setStep('navigate');
+            setScreen('hunt');
+            setParent(false);
+          }}
+        />
+      )}
+    </div>
+  );
+
+  /* ---------- TITLE ---------- */
+  if (screen === 'title') {
+    return shell(
+      <TitleScreen
+        onStart={beginHunt}
+        onContinue={continueRun}
+        resumeLabel={
+          saved
+            ? saved.screen === 'battle'
+              ? '↩ BACK TO THE FINAL BATTLE'
+              : `↩ CARRY ON FROM PART ${saved.stageIdx + 1} / 5`
+            : null
+        }
+        onHeaderTap={titleTap}
+      />
+    );
+  }
+
+  /* ---------- OPTIONAL COLD OPEN ---------- */
+  if (screen === 'coldopen') {
+    return shell(<IgnisIntro onDone={() => setScreen('brief')} />);
+  }
+
+  /* ---------- NARRATOR ---------- */
+  if (screen === 'brief') {
+    return shell(<Narrator audio={audio} voiceOn={voiceOn} onFinish={() => setScreen('hunt')} />);
+  }
+
+  /* ---------- BATTLE ---------- */
+  if (screen === 'battle') {
+    return shell(
+      <>
+        <div className="px-4 pt-3 text-center">
+          <h2 className="font-black text-2xl" style={{ color: C.gold, textShadow: `0 0 16px ${C.ember}` }} onClick={titleTap}>
+            FINAL BATTLE
+          </h2>
+          <p className="text-xs font-bold text-white opacity-70">All 5 parts assembled. Let it rip.</p>
+        </div>
+        <div className="flex-1 min-h-0">
+          <Battle audio={audio} onDone={() => setScreen('victory')} />
+        </div>
+      </>
+    );
+  }
+
+  /* ---------- VICTORY ---------- */
+  if (screen === 'victory') {
+    return shell(
+      <div className="flex-1 relative flex flex-col items-center justify-center px-6 text-center overflow-hidden">
+        <Confetti run />
+        <div className="text-7xl floaty relative">🏆</div>
+        <h1
+          className="font-black mt-3 relative"
+          style={{ fontSize: 38, color: C.gold, textShadow: `0 0 22px ${C.ember}, 3px 3px 0 ${C.flame}` }}
+        >
+          HAPPY BIRTHDAY
+          <br />
+          EVAN!
+        </h1>
+        <p className="mt-3 font-bold text-white relative">
+          You beat the Shadow Wyrm.
+          <br />
+          The Dragon Beyblade is yours.
+        </p>
+        <div className="flex flex-wrap justify-center gap-2 mt-4 relative">
+          {parts.map((p, i) => (
+            <div
+              key={i}
+              className="px-3 py-2 rounded-xl font-black text-xs"
+              style={{ background: p.color, color: '#1a0b2e' }}
+            >
+              {p.emoji} {p.name}
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 font-black relative" style={{ color: C.cyan }}>
+          Great radar work, Sawyer 🤖
+        </p>
+        <button
+          onClick={resetAll}
+          className="mt-6 px-8 py-3 rounded-full font-black relative"
+          style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '2px solid rgba(255,255,255,0.4)' }}
+        >
+          Play again
+        </button>
+      </div>
+    );
+  }
+
+  /* ---------- HUNT ---------- */
+  const wrongFloor = floor !== stage.floor;
+
+  return shell(
+    <>
+      <div className="px-3 pt-3 pb-2">
+        <div className="flex items-center justify-between">
+          <div className="font-black text-lg" style={{ color: C.gold }} onClick={titleTap}>
+            🐉 PART {stage.n} / 5
+          </div>
+          <div className="flex gap-1">
+            {STAGES.map((s, i) => (
+              <div
+                key={s.n}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-black"
+                style={{
+                  background: i < parts.length ? parts[i].color : 'rgba(255,255,255,0.12)',
+                  color: i < parts.length ? '#1a0b2e' : 'rgba(255,255,255,0.4)',
+                  border: i === stageIdx ? `2px solid ${C.gold}` : '2px solid transparent',
+                }}
+              >
+                {i < parts.length ? parts[i].emoji : s.n}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {step === 'navigate' && (
+        <>
+          <div className="px-3 pb-2 flex items-center gap-2">
+            <div style={{ flexShrink: 0 }}>
+              <Dragon speaking size={78} />
+            </div>
+            <div
+              className="rounded-2xl px-3 py-2 font-bold text-white text-sm flex-1"
+              style={{ background: 'rgba(255,255,255,0.10)', border: `2px solid ${C.ember}` }}
+            >
+              {stage.taunt}
+            </div>
+          </div>
+
+          <div className="px-3 pb-2 flex gap-2">
+            {['up', 'down'].map((f) => (
+              <button
+                key={f}
+                onClick={() => {
+                  setFloor(f);
+                  audio.blip(600, 0.07);
+                }}
+                className="flex-1 py-2 rounded-xl font-black text-sm"
+                style={{
+                  background: floor === f ? C.gold : 'rgba(255,255,255,0.10)',
+                  color: floor === f ? '#3b1f0b' : '#fff',
+                  border: `2px solid ${floor === f ? '#fff' : 'rgba(255,255,255,0.2)'}`,
+                }}
+              >
+                {f === 'up' ? '⬆️ UPSTAIRS' : '⬇️ DOWNSTAIRS'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 min-h-0 px-2 pb-2">
+            <div className="w-full h-full rounded-2xl overflow-hidden" style={{ border: `4px solid ${C.gold}` }}>
+              {/* On the wrong floor the highlight is hidden entirely —
+                  finding the stairs is part of the game. */}
+              <FloorMap
+                floor={floor}
+                targetRoom={wrongFloor ? null : stage.roomId}
+                showArrow={showArrow && !wrongFloor}
+                onPick={pickRoom}
+                wrongId={wrongId}
+              />
+            </div>
+          </div>
+
+          <div className="px-3 pb-3 text-center font-black text-sm" style={{ color: wrongFloor ? C.flame : '#fff' }}>
+            {wrongFloor
+              ? stage.floor === 'down'
+                ? '🐉 Go DOWNSTAIRS! Tap the downstairs button.'
+                : '🐉 Go UPSTAIRS! Tap the upstairs button.'
+              : 'EVAN: tap the glowing room, then RUN there!'}
+          </div>
+        </>
+      )}
+
+      {step === 'radar' && (
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center overflow-auto">
+          <h2 className="font-black text-2xl" style={{ color: C.cyan }}>
+            SAWYER&apos;S TURN
+          </h2>
+          <p className="font-bold text-white mt-2 text-sm">
+            You&apos;re in <span style={{ color: C.gold }}>{stage.roomName}</span>.
+            <br />
+            Sawyer — hold the radar to sniff out the spot!
+          </p>
+          <RadarPad audio={audio} onFound={onFound} />
+        </div>
+      )}
+
+      {step === 'grab' && (
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div className="text-7xl pop">{stage.spotEmoji}</div>
+          <h2 className="font-black text-xl mt-3" style={{ color: C.lime }}>
+            RADAR LOCK!
+          </h2>
+          <div
+            className="mt-3 px-5 py-4 rounded-3xl pop"
+            style={{ background: `linear-gradient(180deg, ${C.gold}, ${C.ember})`, border: '5px solid #fff' }}
+          >
+            <div className="font-black text-xl" style={{ color: '#3b0d00' }}>
+              {stage.spot}
+            </div>
+          </div>
+          <p className="mt-4 font-bold text-white">GO! Grab the treasure!</p>
+          <button
+            onClick={() => {
+              audio.blip(800, 0.14);
+              setStep('seal');
+            }}
+            className="mt-7 px-10 py-5 rounded-full font-black text-2xl glowy"
+            style={{ background: `linear-gradient(180deg,${C.flame},#9d174d)`, color: '#fff', border: '5px solid #fff' }}
+          >
+            GOT IT! 🙌
+          </button>
+        </div>
+      )}
+
+      {step === 'seal' && (
+        <div className="flex-1 flex flex-col px-4 pb-4 min-h-0">
+          <div className="text-center">
+            <div className="text-5xl floaty">🔒</div>
+            <h2 className="font-black text-2xl" style={{ color: C.gold }}>
+              DRAGON SEAL
+            </h2>
+            <p className="font-bold text-white text-sm mt-1">
+              The Bey part is locked inside!
+              <br />
+              <span style={{ color: C.flame }}>BOTH of you hold your pad — at the same time!</span>
+            </p>
+          </div>
+          <SealPads audio={audio} onBroken={onSealBroken} />
+        </div>
+      )}
+
+      {step === 'reward' && (
+        <div className="flex-1 relative flex flex-col items-center justify-center px-6 text-center overflow-hidden">
+          <Confetti run />
+          <div className="text-7xl pop relative">{stage.part.emoji}</div>
+          <h2
+            className="font-black text-3xl mt-2 pop relative"
+            style={{ color: stage.part.color, textShadow: '2px 2px 0 rgba(0,0,0,0.4)' }}
+          >
+            {stage.part.name}
+          </h2>
+          <p className="font-bold text-white mt-2 relative">RECLAIMED!</p>
+
+          {/* Naming the real present is the whole payoff. */}
+          <div
+            className="mt-4 px-5 py-4 rounded-3xl relative"
+            style={{ background: 'rgba(255,255,255,0.12)', border: `3px solid ${C.gold}` }}
+          >
+            <div className="text-xs font-black" style={{ color: C.gold }}>
+              THE DRAGON HID IT INSIDE…
+            </div>
+            <div className="font-black text-2xl text-white mt-1">{stage.gift}</div>
+            <div className="text-3xl mt-1">🎁</div>
+          </div>
+
+          <div className="flex gap-2 mt-4 relative">
+            {STAGES.map((s, i) => (
+              <div
+                key={s.n}
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                style={{ background: i < parts.length ? parts[i].color : 'rgba(255,255,255,0.12)' }}
+              >
+                {i < parts.length ? parts[i].emoji : '·'}
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={nextStage}
+            className="mt-6 px-9 py-4 rounded-full font-black text-xl glowy relative"
+            style={{ background: `linear-gradient(180deg,${C.lime},#3f6212)`, color: '#12240b', border: '5px solid #fff' }}
+          >
+            {stageIdx === STAGES.length - 1 ? 'ASSEMBLE THE DRAGON BEY ⚔️' : `HUNT PART ${stage.n + 1} →`}
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
