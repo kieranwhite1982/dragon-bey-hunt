@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Dragon from './Dragon.jsx';
 import { SCRIPT } from '../data/stages.js';
-import { speakLine, stopSpeaking, resumeSpeaking } from '../audio/speech.js';
+import { playVoice, stopVoice, resumeVoice } from '../audio/voiceover.js';
 import { WYRM_PORTRAIT } from '../optionalAssets.js';
 import { C } from '../theme.js';
 
@@ -34,11 +34,11 @@ export default function Narrator({ audio, voiceOn, onFinish }) {
 
   useEffect(() => {
     /* Releases SCRIPT[0]'s speech if App.jsx queued-and-paused it rather than
-       speaking it straight away (see primeLine in audio/speech.js) -- a
+       speaking it straight away (see primeVoice in audio/voiceover.js) -- a
        harmless no-op if there was nothing to release, so this always runs
        regardless of whether a cold-open video came first. Text and voice
        start together right here. */
-    resumeSpeaking();
+    resumeVoice();
     type(SCRIPT[0]);
     return () => clearInterval(typingRef.current);
   }, [type]);
@@ -55,12 +55,12 @@ export default function Narrator({ audio, voiceOn, onFinish }) {
     }
     if (i < SCRIPT.length - 1) {
       const ni = i + 1;
-      speakLine(SCRIPT[ni], voiceOn);
+      playVoice(`script-${ni}`, SCRIPT[ni], voiceOn);
       audio.grumble();
       setI(ni);
       type(SCRIPT[ni]);
     } else {
-      stopSpeaking();
+      stopVoice();
       audio.roar(1.2);
       onFinish();
     }
@@ -125,7 +125,7 @@ export default function Narrator({ audio, voiceOn, onFinish }) {
 
       <button
         onClick={() => {
-          stopSpeaking();
+          stopVoice();
           onFinish();
         }}
         className="mt-3 text-xs font-bold"

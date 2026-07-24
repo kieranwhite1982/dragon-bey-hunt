@@ -30,6 +30,34 @@ function findOptional(stem) {
   }
 }
 
+/* Every spoken line in the game is fixed text (SCRIPT and STAGES never
+   change at runtime), so pre-recorded voice is a fixed, enumerable set of
+   16 files rather than something generated per playthrough. Same
+   build-time-only detection as findOptional above -- drop a file matching
+   one of these keys into public/voice/ and rebuild; anything missing falls
+   back to the device's speechSynthesis (see audio/voiceover.js). */
+const VOICE_KEYS = [
+  'script-0', 'script-1', 'script-2', 'script-3', 'script-4', 'script-5',
+  'found-pantry', 'found-laundry', 'found-study', 'found-lounge', 'found-garage',
+  'spot-pantry', 'spot-laundry', 'spot-study', 'spot-lounge', 'spot-garage',
+];
+
+function findVoiceFiles() {
+  const dir = path.join(PUBLIC_DIR, 'voice');
+  let files;
+  try {
+    files = fs.readdirSync(dir);
+  } catch {
+    return {};
+  }
+  const map = {};
+  for (const key of VOICE_KEYS) {
+    const hit = files.filter((f) => f.toLowerCase().startsWith(key + '.')).sort()[0];
+    if (hit) map[key] = `voice/${hit}`;
+  }
+  return map;
+}
+
 function buildVersion() {
   const d = new Date();
   const stamp =
@@ -78,7 +106,7 @@ export default defineConfig({
       workbox: {
         /* Video/image slots must be precached too, or the garage finale dies. */
         globPatterns: [
-          '**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,gif,woff,woff2,mp4,webm,m4v,mov,ogg}',
+          '**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,gif,woff,woff2,mp4,webm,m4v,mov,ogg,mp3,m4a,wav,aac}',
         ],
         /* Default is 2 MiB, which silently drops any generated dragon clip. */
         maximumFileSizeToCacheInBytes: 40 * 1024 * 1024,
@@ -97,6 +125,7 @@ export default defineConfig({
     __WYRM_PORTRAIT__: JSON.stringify(findOptional('wyrm-portrait')),
     __WYRM_SMASH__: JSON.stringify(findOptional('wyrm-smash')),
     __IGNIS_VICTORY__: JSON.stringify(findOptional('ignis-victory')),
+    __VOICE_FILES__: JSON.stringify(findVoiceFiles()),
   },
   build: {
     target: 'es2018',

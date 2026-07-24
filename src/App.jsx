@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { STAGES, SCRIPT } from './data/stages.js';
 import useAudio from './audio/useAudio.js';
-import { speakLine, primeLine, stopSpeaking, useVoiceStatus } from './audio/speech.js';
+import { useVoiceStatus } from './audio/speech.js';
+import { playVoice, primeVoice, stopVoice } from './audio/voiceover.js';
 import useWakeLock from './hooks/useWakeLock.js';
 import { clearRun, loadRun, saveRun, usePrefs } from './hooks/useSavedRun.js';
 import { IGNIS_INTRO, WYRM_SMASH, IGNIS_VICTORY } from './optionalAssets.js';
@@ -57,7 +58,7 @@ export default function App() {
     return () => clearTimeout(id);
   }, [screen, step, stageIdx]);
 
-  useEffect(() => () => stopSpeaking(), []);
+  useEffect(() => () => stopVoice(), []);
   useEffect(() => () => clearTimeout(tapTimer.current), []);
 
   /* Autosave. If the phone locks or the tab is evicted mid-hunt, the title
@@ -75,7 +76,7 @@ export default function App() {
       audio.blip(900, 0.12, 'square', 0.2);
       setTimeout(() => audio.blip(1300, 0.16, 'square', 0.2), 110);
       setWrongId(null);
-      speakLine(`Yes! Run to ${stage.roomName}!`, voiceOn);
+      playVoice(`found-${stage.roomId}`, `Yes! Run to ${stage.roomName}!`, voiceOn);
       setStep('radar');
     } else {
       /* Wrong room shakes and grumbles. No penalty — guessing is half the
@@ -87,7 +88,7 @@ export default function App() {
   };
 
   const onFound = useCallback(() => {
-    speakLine(stage.spot, voiceOn);
+    playVoice(`spot-${stage.roomId}`, stage.spot, voiceOn);
     setStep('grab');
   }, [stage, voiceOn]);
 
@@ -97,7 +98,7 @@ export default function App() {
   }, [stage]);
 
   const nextStage = () => {
-    stopSpeaking();
+    stopVoice();
     if (stageIdx === STAGES.length - 1) {
       setScreen('battle');
     } else {
@@ -122,7 +123,7 @@ export default function App() {
   };
 
   const resetAll = () => {
-    stopSpeaking();
+    stopVoice();
     clearRun();
     setSaved(null);
     setScreen('title');
@@ -143,9 +144,9 @@ export default function App() {
          (Android requires the call itself happen in this tap) but hold it
          silent -- Narrator.jsx releases it the moment its text is on screen,
          however many cutscenes played first. */
-      primeLine(SCRIPT[0], voiceOn);
+      primeVoice('script-0', SCRIPT[0], voiceOn);
     } else {
-      speakLine(SCRIPT[0], voiceOn);
+      playVoice('script-0', SCRIPT[0], voiceOn);
     }
     setScreen(IGNIS_INTRO ? 'coldopen' : WYRM_SMASH ? 'theft' : 'brief');
   };
