@@ -114,8 +114,11 @@ export default function Narrator({ audio, onFinish }) {
             src={clip}
             className="rounded-3xl"
             style={{
-              width: 186,
-              height: 270,
+              /* Shrinks on short screens so the NEXT button and the line of
+                 text are never pushed off the bottom; 270px is the cap on a
+                 normal phone. */
+              height: 'min(270px, 38dvh)',
+              aspectRatio: '186 / 270',
               objectFit: 'cover',
               border: `4px solid ${C.gold}`,
               boxShadow: `0 0 34px ${C.ember}`,
