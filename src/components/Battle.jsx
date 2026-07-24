@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { IGNIS_PORTRAIT, WYRM_PORTRAIT } from '../optionalAssets.js';
 import { C } from '../theme.js';
 
 /* The final battle carries the whole payoff, so it is scripted to run about
@@ -467,17 +468,49 @@ export default function Battle({ audio, onDone }) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Portraits stand in for the emoji when they exist, so the fight reads
+          as Ignis vs the Wyrm face to face rather than two HP bars. Both are
+          optional everywhere else in the app, so both fall back here too. */}
       <div className="px-3 pt-2 pb-1">
-        <div className="flex justify-between text-xs font-black mb-1" style={{ color: C.gold }}>
-          <span>🔥 DRAGON BEY (EVAN + SAWYER)</span>
-          <span>{Math.round(heroHP)}</span>
+        <div className="flex items-center gap-2 mb-1">
+          {IGNIS_PORTRAIT ? (
+            <img
+              src={IGNIS_PORTRAIT}
+              alt=""
+              className="rounded-full object-cover shrink-0"
+              style={{ width: 30, height: 30, border: `2px solid ${C.gold}` }}
+            />
+          ) : (
+            <span className="text-lg shrink-0">🔥</span>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between text-xs font-black mb-1" style={{ color: C.gold }}>
+              <span className="truncate">DRAGON BEY (EVAN + SAWYER)</span>
+              <span className="pl-2">{Math.round(heroHP)}</span>
+            </div>
+            {bar(heroHP, 'linear-gradient(90deg,#ffc94a,#ff3d00)')}
+          </div>
         </div>
-        {bar(heroHP, 'linear-gradient(90deg,#ffc94a,#ff3d00)')}
-        <div className="flex justify-between text-xs font-black mt-2 mb-1" style={{ color: C.shadow }}>
-          <span>🐲 SHADOW WYRM</span>
-          <span>{Math.round(foeHP)}</span>
+
+        <div className="flex items-center gap-2 mt-2">
+          {WYRM_PORTRAIT ? (
+            <img
+              src={WYRM_PORTRAIT}
+              alt=""
+              className="rounded-full object-cover shrink-0"
+              style={{ width: 30, height: 30, border: `2px solid ${C.shadow}` }}
+            />
+          ) : (
+            <span className="text-lg shrink-0">🐲</span>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between text-xs font-black mb-1" style={{ color: C.shadow }}>
+              <span className="truncate">SHADOW WYRM</span>
+              <span className="pl-2">{Math.round(foeHP)}</span>
+            </div>
+            {bar(foeHP, 'linear-gradient(90deg,#c084fc,#4c1d95)')}
+          </div>
         </div>
-        {bar(foeHP, 'linear-gradient(90deg,#c084fc,#4c1d95)')}
       </div>
 
       <div className="flex-1 relative min-h-0">

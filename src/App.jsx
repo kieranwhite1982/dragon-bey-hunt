@@ -4,7 +4,7 @@ import { STAGES } from './data/stages.js';
 import useAudio from './audio/useAudio.js';
 import useWakeLock from './hooks/useWakeLock.js';
 import { clearRun, loadRun, saveRun } from './hooks/useSavedRun.js';
-import { IGNIS_INTRO, WYRM_SMASH, IGNIS_VICTORY } from './optionalAssets.js';
+import { IGNIS_INTRO, IGNIS_PORTRAIT, WYRM_SMASH, IGNIS_VICTORY } from './optionalAssets.js';
 
 import Dragon from './components/Dragon.jsx';
 import FloorMap from './components/FloorMap.jsx';
@@ -233,7 +233,23 @@ export default function App() {
     return shell(
       <div className="flex-1 relative flex flex-col items-center justify-center px-6 text-center overflow-hidden">
         <Confetti run />
-        <div className="text-7xl floaty relative">🏆</div>
+        {/* Ignis himself sees them off rather than a bare trophy emoji; the
+            portrait is optional everywhere else, so it falls back here too. */}
+        {IGNIS_PORTRAIT ? (
+          <div
+            className="floaty relative rounded-full overflow-hidden"
+            style={{
+              width: 128,
+              height: 128,
+              border: `4px solid ${C.gold}`,
+              boxShadow: `0 0 40px ${C.ember}`,
+            }}
+          >
+            <img src={IGNIS_PORTRAIT} alt="" className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="text-7xl floaty relative">🏆</div>
+        )}
         <h1
           className="font-black mt-3 relative"
           style={{ fontSize: 38, color: C.gold, textShadow: `0 0 22px ${C.ember}, 3px 3px 0 ${C.flame}` }}
