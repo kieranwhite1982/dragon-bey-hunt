@@ -19,6 +19,7 @@ const victoryFile = typeof __IGNIS_VICTORY__ === 'undefined' ? null : __IGNIS_VI
 const scriptVideos = typeof __SCRIPT_VIDEOS__ === 'undefined' ? {} : __SCRIPT_VIDEOS__;
 const partImages = typeof __PART_IMAGES__ === 'undefined' ? {} : __PART_IMAGES__;
 const beyFile = typeof __BEY_ASSEMBLED__ === 'undefined' ? null : __BEY_ASSEMBLED__;
+const battleFinishFile = typeof __BATTLE_FINISH__ === 'undefined' ? null : __BATTLE_FINISH__;
 
 const base = import.meta.env.BASE_URL || '/';
 
@@ -44,6 +45,10 @@ export const PART_IMAGES = Object.fromEntries(
 
 /* The finished Bey, for the victory screen. Optional like everything else. */
 export const BEY_ASSEMBLED = beyFile ? base + beyFile : null;
+
+/* The Dragon Strike, played over the canvas once the boys' mashing fills the
+   power meter. The mash itself stays interactive -- see Battle.jsx. */
+export const BATTLE_FINISH = battleFinishFile ? base + battleFinishFile : null;
 
 export const INTRO_IS_VIDEO =
   !!introFile && /\.(mp4|webm|m4v|mov|ogg)$/i.test(introFile);

@@ -146,6 +146,7 @@ export default defineConfig({
     __SCRIPT_VIDEOS__: JSON.stringify(findScriptVideos()),
     __PART_IMAGES__: JSON.stringify(findPartImages()),
     __BEY_ASSEMBLED__: JSON.stringify(findOptional('bey-assembled')),
+    __BATTLE_FINISH__: JSON.stringify(findOptional('battle-finish')),
   },
   build: {
     target: 'es2018',

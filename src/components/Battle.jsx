@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { IGNIS_PORTRAIT, WYRM_PORTRAIT } from '../optionalAssets.js';
+import { BATTLE_FINISH, IGNIS_PORTRAIT, WYRM_PORTRAIT } from '../optionalAssets.js';
 import { C } from '../theme.js';
 
 /* The final battle carries the whole payoff, so it is scripted to run about
@@ -46,6 +46,38 @@ export default function Battle({ audio, onDone }) {
   useEffect(() => {
     doneRef.current = onDone;
   }, [onDone]);
+
+  /* When a Dragon Strike clip exists it plays over the canvas from the moment
+     the power meter fills, and the victory screen waits for it. Held in a ref
+     so the rAF loop can read it without the effect tearing down mid-battle.
+
+     It is only ever a delay, never a gate: the clip ending, erroring, failing
+     to autoplay, or simply taking too long all release it. Nothing about the
+     finale may depend on a video actually playing. */
+  const clipHoldRef = useRef(!!BATTLE_FINISH);
+  const vidRef = useRef(null);
+
+  useEffect(() => {
+    if (!BATTLE_FINISH) return undefined;
+    const t = setTimeout(() => {
+      clipHoldRef.current = false;
+    }, 25000);
+    return () => clearTimeout(t);
+  }, []);
+
+  /* A rejected autoplay fires no onEnded, so release the hold immediately
+     rather than making them sit through the 25s backstop. */
+  useEffect(() => {
+    if (!BATTLE_FINISH || phase !== 'finish') return;
+    const v = vidRef.current;
+    if (!v) return;
+    const p = v.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(() => {
+        clipHoldRef.current = false;
+      });
+    }
+  }, [phase]);
 
   const S = useRef({
     t: 0,
@@ -259,7 +291,7 @@ export default function Battle({ audio, onDone }) {
           burst(cx, cy, 80, ['#ffc94a', '#a3e635', '#ff6b35', '#ffffff'], 640);
         }
       } else if (s.phase === 'win') {
-        if (!s.finished && s.t >= T.winHold) {
+        if (!s.finished && s.t >= T.winHold && !clipHoldRef.current) {
           s.finished = true;
           winTimer = 1;
           doneRef.current();
@@ -515,6 +547,25 @@ export default function Battle({ audio, onDone }) {
 
       <div className="flex-1 relative min-h-0">
         <canvas ref={cvRef} className="w-full h-full" />
+
+        {/* Covers the canvas from the Dragon Strike onward, but sits below the
+            HP bars above it, so they still watch the Wyrm drain to zero. */}
+        {BATTLE_FINISH && (phase === 'finish' || phase === 'win') && (
+          <video
+            ref={vidRef}
+            src={BATTLE_FINISH}
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover', background: '#000' }}
+            playsInline
+            autoPlay
+            onEnded={() => {
+              clipHoldRef.current = false;
+            }}
+            onError={() => {
+              clipHoldRef.current = false;
+            }}
+          />
+        )}
 
         {phase === 'intro' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
