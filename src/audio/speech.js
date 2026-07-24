@@ -19,6 +19,18 @@ function pickVoice(s) {
   );
 }
 
+function buildUtterance(text, s) {
+  const clean = String(text).replace(/[^\w\s,.!?'-]/g, ' ');
+  const u = new SpeechSynthesisUtterance(clean);
+  u.rate = 0.88;
+  u.pitch = 0.5;
+  u.volume = 1;
+  u.lang = 'en-AU';
+  const v = pickVoice(s);
+  if (v) u.voice = v;
+  return u;
+}
+
 export function speakLine(text, enabled) {
   if (!enabled) return false;
   try {
@@ -27,19 +39,42 @@ export function speakLine(text, enabled) {
     /* Only cancel if something is actually in flight; a bare cancel() on some
        Android builds wedges the queue for the rest of the session. */
     if (s.speaking || s.pending) s.cancel();
-    const clean = String(text).replace(/[^\w\s,.!?'-]/g, ' ');
-    const u = new SpeechSynthesisUtterance(clean);
-    u.rate = 0.88;
-    u.pitch = 0.5;
-    u.volume = 1;
-    u.lang = 'en-AU';
-    const v = pickVoice(s);
-    if (v) u.voice = v;
     s.resume();
-    s.speak(u);
+    s.speak(buildUtterance(text, s));
     return true;
   } catch {
     return false;
+  }
+}
+
+/* For a line that has to be queued inside a tap handler (Android's rule,
+   see file header) but must not actually play yet -- e.g. the cold-open
+   video already has its own dialogue track, and this line should only be
+   heard once that video is done and the narrator's text is on screen.
+   pause()/resume() are not gesture-gated the way speak() is, so pausing
+   right after queuing holds it silently until resumeSpeaking() releases
+   it later, with no fresh gesture required. */
+export function primeLine(text, enabled) {
+  if (!enabled) return false;
+  try {
+    const s = window.speechSynthesis;
+    if (!s) return false;
+    if (s.speaking || s.pending) s.cancel();
+    s.speak(buildUtterance(text, s));
+    s.pause();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function resumeSpeaking() {
+  try {
+    /* A harmless no-op if nothing was primed -- safe to call unconditionally
+       from the narrator's mount effect regardless of which path got it there. */
+    if (window.speechSynthesis) window.speechSynthesis.resume();
+  } catch {
+    /* noop */
   }
 }
 

@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { STAGES, SCRIPT } from './data/stages.js';
 import useAudio from './audio/useAudio.js';
-import { speakLine, stopSpeaking, useVoiceStatus } from './audio/speech.js';
+import { speakLine, primeLine, stopSpeaking, useVoiceStatus } from './audio/speech.js';
 import useWakeLock from './hooks/useWakeLock.js';
 import { clearRun, loadRun, saveRun, usePrefs } from './hooks/useSavedRun.js';
-import { IGNIS_INTRO } from './optionalAssets.js';
+import { IGNIS_INTRO, WYRM_SMASH, IGNIS_VICTORY } from './optionalAssets.js';
 
 import Dragon from './components/Dragon.jsx';
 import FloorMap from './components/FloorMap.jsx';
@@ -17,6 +17,7 @@ import Confetti from './components/Confetti.jsx';
 import ParentPanel from './components/ParentPanel.jsx';
 import TitleScreen from './components/TitleScreen.jsx';
 import IgnisIntro from './components/IgnisIntro.jsx';
+import VideoCutscene from './components/VideoCutscene.jsx';
 
 import { C } from './theme.js';
 
@@ -137,8 +138,16 @@ export default function App() {
        context unlock and the very first speech line. */
     audio.unlock();
     audio.roar(1.2);
-    speakLine(SCRIPT[0], voiceOn);
-    setScreen(IGNIS_INTRO ? 'coldopen' : 'brief');
+    if (IGNIS_INTRO) {
+      /* The cold-open video has its own dialogue track. Queue this line now
+         (Android requires the call itself happen in this tap) but hold it
+         silent -- Narrator.jsx releases it the moment its text is on screen,
+         however many cutscenes played first. */
+      primeLine(SCRIPT[0], voiceOn);
+    } else {
+      speakLine(SCRIPT[0], voiceOn);
+    }
+    setScreen(IGNIS_INTRO ? 'coldopen' : WYRM_SMASH ? 'theft' : 'brief');
   };
 
   const continueRun = () => {
@@ -197,7 +206,14 @@ export default function App() {
 
   /* ---------- OPTIONAL COLD OPEN ---------- */
   if (screen === 'coldopen') {
-    return shell(<IgnisIntro onDone={() => setScreen('brief')} />);
+    return shell(<IgnisIntro onDone={() => setScreen(WYRM_SMASH ? 'theft' : 'brief')} />);
+  }
+
+  /* ---------- OPTIONAL THEFT CUTSCENE ---------- */
+  /* Silent by design (see docs/FLOW-PROMPTS.md) -- no speech to hold or
+     release here, unlike the cold open. */
+  if (screen === 'theft') {
+    return shell(<VideoCutscene src={WYRM_SMASH} onDone={() => setScreen('brief')} />);
   }
 
   /* ---------- NARRATOR ---------- */
@@ -216,10 +232,19 @@ export default function App() {
           <p className="text-xs font-bold text-white opacity-70">All 5 parts assembled. Let it rip.</p>
         </div>
         <div className="flex-1 min-h-0">
-          <Battle audio={audio} onDone={() => setScreen('victory')} />
+          <Battle audio={audio} onDone={() => setScreen(IGNIS_VICTORY ? 'victoryintro' : 'victory')} />
         </div>
       </>
     );
+  }
+
+  /* ---------- OPTIONAL VICTORY CUTSCENE ---------- */
+  /* Plays full-screen before the confetti/text victory screen, rather than
+     layered behind it -- compositing a talking dragon under semi-transparent
+     confetti and headline text got cluttered fast, and this way the clip
+     gets watched properly before the payoff screen takes over. */
+  if (screen === 'victoryintro') {
+    return shell(<VideoCutscene src={IGNIS_VICTORY} onDone={() => setScreen('victory')} />);
   }
 
   /* ---------- VICTORY ---------- */
