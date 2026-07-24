@@ -7,3 +7,4 @@ dev-dist/
 
 # Uncompressed source art/video, kept locally out of the bundle
 .originals/
+.enc/
