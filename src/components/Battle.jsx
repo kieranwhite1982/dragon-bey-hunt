@@ -602,7 +602,12 @@ export default function Battle({ audio, onDone }) {
           </div>
         )}
 
-        {phase === 'finish' && (
+        {/* These two captions narrate what the canvas can only imply, so they
+            earn their place over abstract particles. Over the Dragon Strike
+            clip they just sit on top of the animation for its full 20s and
+            hide the thing they're describing -- the clip says it better, and
+            the victory screen says it in words a moment later. */}
+        {phase === 'finish' && !BATTLE_FINISH && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="font-black text-3xl pop" style={{ color: C.gold, textShadow: `0 0 24px ${C.ember}` }}>
               DRAGON STRIKE!!!
@@ -610,7 +615,7 @@ export default function Battle({ audio, onDone }) {
           </div>
         )}
 
-        {phase === 'win' && (
+        {phase === 'win' && !BATTLE_FINISH && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="font-black text-3xl text-center px-6 pop" style={{ color: C.lime, textShadow: '0 0 20px #000' }}>
               THE SHADOW WYRM
