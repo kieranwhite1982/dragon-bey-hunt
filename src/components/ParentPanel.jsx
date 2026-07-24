@@ -1,5 +1,6 @@
 import React from 'react';
 import { STAGES } from '../data/stages.js';
+import useOfflineReady from '../hooks/useOfflineReady.js';
 import { BUILD_VERSION, C } from '../theme.js';
 
 /* Four taps on the header opens this. Everything a parent needs the night
@@ -9,6 +10,52 @@ import { BUILD_VERSION, C } from '../theme.js';
    No voice controls here any more: the app doesn't synthesise speech at all.
    Ignis either talks in his own pre-rendered clips or the line is read off
    the screen, so there is nothing to toggle or test. */
+const READY_STYLES = {
+  ready: { bg: '#dcfce7', fg: '#14532d' },
+  partial: { bg: '#fef3c7', fg: '#78350f' },
+  error: { bg: '#fee2e2', fg: '#7f1d1d' },
+};
+
+function OfflineReady() {
+  const { status, total, cached, missing, recheck } = useOfflineReady(true);
+
+  if (status === 'none') return null;
+
+  const tone = READY_STYLES[status] || { bg: '#f6f2ea', fg: '#6b5a45' };
+  const line = {
+    idle: 'Checking…',
+    checking: 'Checking…',
+    ready: `✅ All ${total} clips and pictures are on this phone. The garage will work.`,
+    partial: `⚠️ Only ${cached} of ${total} downloaded. Stay on wifi and reopen — the garage may not work yet.`,
+    unsupported: 'Offline cache not active here. This check only works on the installed app, not the dev server.',
+    error: "Couldn't read the offline cache on this device.",
+  }[status];
+
+  return (
+    <div className="mb-3 p-3 rounded-xl" style={{ background: tone.bg }}>
+      <div className="text-xs font-black mb-1" style={{ color: tone.fg }}>
+        Ready for the garage?
+      </div>
+      <div className="text-xs font-bold" style={{ color: tone.fg }}>{line}</div>
+      {status === 'partial' && missing.length > 0 && (
+        <div className="text-[10px] mt-1" style={{ color: tone.fg, opacity: 0.85 }}>
+          Missing: {missing.slice(0, 4).join(', ')}
+          {missing.length > 4 ? ` +${missing.length - 4} more` : ''}
+        </div>
+      )}
+      {(status === 'partial' || status === 'error') && (
+        <button
+          onClick={recheck}
+          className="mt-2 w-full py-2 rounded-xl font-black text-xs"
+          style={{ background: C.gold, color: C.ink }}
+        >
+          Check again
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ParentPanel({ onClose, onJump, onReset }) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
@@ -21,6 +68,8 @@ export default function ParentPanel({ onClose, onJump, onReset }) {
             ✕
           </button>
         </div>
+
+        <OfflineReady />
 
         {STAGES.map((s, i) => (
           <div key={s.n} className="mb-3 p-3 rounded-xl" style={{ background: '#f6f2ea' }}>
