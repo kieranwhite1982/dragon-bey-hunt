@@ -10,6 +10,12 @@ import { C } from '../theme.js';
    is intact — the screen is only ever reached from the title button tap, so
    it normally is. If play() is still rejected we surface a tap-to-play button
    rather than sitting on a black rectangle. */
+/* The Flow clip is 1280x720 landscape; the phone is portrait.
+   'contain' shows the whole frame but letterboxes it into a thin strip.
+   'cover'  fills the screen but crops the left and right off.
+   Switch this one word after you have watched it on the actual phone. */
+const INTRO_FIT = 'contain';
+
 export default function IgnisIntro({ onDone }) {
   const vidRef = useRef(null);
   const [needsTap, setNeedsTap] = useState(false);
@@ -26,20 +32,29 @@ export default function IgnisIntro({ onDone }) {
   if (!IGNIS_INTRO) return null;
 
   return (
-    <div className="flex-1 relative flex flex-col items-center justify-center bg-black">
+    <div
+      className="flex-1 relative flex flex-col items-center justify-center overflow-hidden"
+      style={{ background: `radial-gradient(circle at 50% 40%, ${C.night2}, #000 75%)` }}
+    >
       {INTRO_IS_VIDEO ? (
         <video
           ref={vidRef}
           src={IGNIS_INTRO}
-          className="w-full h-full object-contain"
+          className="w-full h-full"
+          style={{ objectFit: INTRO_FIT, maxHeight: '100%' }}
           playsInline
           autoPlay
           onEnded={onDone}
           onError={() => setFailed(true)}
-          style={{ maxHeight: '100%' }}
         />
       ) : (
-        <img src={IGNIS_INTRO} alt="" className="w-full h-full object-contain" onError={() => setFailed(true)} />
+        <img
+          src={IGNIS_INTRO}
+          alt=""
+          className="w-full h-full"
+          style={{ objectFit: INTRO_FIT }}
+          onError={() => setFailed(true)}
+        />
       )}
 
       {needsTap && !failed && (

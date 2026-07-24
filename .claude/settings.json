@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(npm:*)",
+      "Bash(npm *)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(git:*)",
+      "Bash(git *)",
+      "Bash(gh:*)",
+      "Bash(gh *)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(rg:*)",
+      "PowerShell(npm:*)",
+      "PowerShell(npx:*)",
+      "PowerShell(node:*)",
+      "PowerShell(git:*)",
+      "PowerShell(gh:*)",
+      "PowerShell(Get-ChildItem:*)",
+      "Read",
+      "Glob",
+      "Grep",
+      "WebFetch(domain:developer.mozilla.org)",
+      "WebFetch(domain:vite.dev)",
+      "WebFetch(domain:vite-pwa-org.netlify.app)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)"
+    ]
+  }
+}
