@@ -21,15 +21,19 @@ import { C } from '../theme.js';
    always has. */
 const WYRM_LINE = 1;
 
+/* Typewriter speed with no clip to pace against. */
+const TYPE_MS = 26;
+
 export default function Narrator({ audio, onFinish }) {
   const [i, setI] = useState(0);
   const [shown, setShown] = useState('');
+  const [talking, setTalking] = useState(false);
   const typingRef = useRef(null);
   const vidRef = useRef(null);
 
   const clip = SCRIPT_VIDEOS[`script-${i}`] || null;
 
-  const type = useCallback((line) => {
+  const type = useCallback((line, ms = TYPE_MS) => {
     setShown('');
     let k = 0;
     clearInterval(typingRef.current);
@@ -37,7 +41,7 @@ export default function Narrator({ audio, onFinish }) {
       k += 1;
       setShown(line.slice(0, k));
       if (k >= line.length) clearInterval(typingRef.current);
-    }, 26);
+    }, ms);
   }, []);
 
   useEffect(() => {
@@ -45,30 +49,51 @@ export default function Narrator({ audio, onFinish }) {
     return () => clearInterval(typingRef.current);
   }, [type]);
 
-  /* Autoplay each line's clip as it comes up. The gesture chain from the
-     tap that advanced the line keeps sound allowed; a rejected play() needs
-     no handling here because the line is already on screen in full. */
+  /* Autoplay each line's clip as it comes up. The gesture chain from the tap
+     that advanced the line keeps sound allowed; a rejected play() lands in
+     onEnded-equivalent state below, so the line never gets stuck behind a
+     clip that was never going to play. */
   useEffect(() => {
-    if (!clip) return;
+    if (!clip) {
+      setTalking(false);
+      return;
+    }
+    setTalking(true);
     const v = vidRef.current;
     if (!v) return;
     v.currentTime = 0;
     const p = v.play();
-    if (p && typeof p.catch === 'function') p.catch(() => {});
+    if (p && typeof p.catch === 'function') p.catch(() => setTalking(false));
   }, [clip, i]);
+
+  /* Pace the typing to the clip so the words land roughly as Ignis says them
+     instead of racing 5-7s ahead of his voice. Falls back to the fixed speed
+     when there's no clip or the duration isn't known yet. */
+  const paceToClip = () => {
+    const v = vidRef.current;
+    const line = SCRIPT[i];
+    if (!v || !isFinite(v.duration) || v.duration <= 0) return;
+    const ms = Math.max(TYPE_MS, Math.floor((v.duration * 1000 * 0.85) / line.length));
+    type(line, ms);
+  };
 
   const typing = shown.length < SCRIPT[i].length;
   const last = i === SCRIPT.length - 1;
 
   const next = () => {
-    if (typing) {
+    /* The two-stage "first tap finishes the text, second tap advances" only
+       makes sense without a clip. Mid-clip that would cost two taps to skip
+       a line they've decided to skip, so there one tap just moves on. */
+    if (!talking && typing) {
       clearInterval(typingRef.current);
       setShown(SCRIPT[i]);
       return;
     }
     if (!last) {
       const ni = i + 1;
-      audio.grumble();
+      /* The grumble is a UI sound for the no-clip case. With a clip it would
+         land on top of Ignis's first word, so let his own voice carry it. */
+      if (!SCRIPT_VIDEOS[`script-${ni}`]) audio.grumble();
       setI(ni);
       type(SCRIPT[ni]);
     } else {
@@ -80,6 +105,8 @@ export default function Narrator({ audio, onFinish }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 text-center">
       <div className="relative">
+        {/* The video box is portrait, not square: the clips are 9:16, and a
+            square crop cut 44% of the frame -- enough to lose his horns. */}
         {clip ? (
           <video
             ref={vidRef}
@@ -87,14 +114,17 @@ export default function Narrator({ audio, onFinish }) {
             src={clip}
             className="rounded-3xl"
             style={{
-              width: 200,
-              height: 200,
+              width: 186,
+              height: 270,
               objectFit: 'cover',
               border: `4px solid ${C.gold}`,
               boxShadow: `0 0 34px ${C.ember}`,
             }}
             playsInline
             autoPlay
+            onLoadedMetadata={paceToClip}
+            onEnded={() => setTalking(false)}
+            onError={() => setTalking(false)}
           />
         ) : (
           <Dragon speaking={typing} fire={last} size={165} />
@@ -140,16 +170,28 @@ export default function Narrator({ audio, onFinish }) {
         ))}
       </div>
 
+      {/* While Ignis is mid-sentence the button stays deliberately dull and
+          says so. It is still tappable -- nothing in this app may trap them --
+          but it stops reading as "press me", which is the only thing standing
+          between a 6-year-old and cutting off every line 5 seconds early. */}
       <button
         onClick={next}
-        className="mt-5 px-10 py-4 rounded-full font-black text-xl glowy"
-        style={{
-          background: `linear-gradient(180deg, ${C.gold}, ${C.ember})`,
-          color: '#3b0d00',
-          border: '5px solid #fff',
-        }}
+        className={`mt-5 px-10 py-4 rounded-full font-black text-xl${talking ? '' : ' glowy'}`}
+        style={
+          talking
+            ? {
+                background: 'rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.75)',
+                border: '5px solid rgba(255,255,255,0.25)',
+              }
+            : {
+                background: `linear-gradient(180deg, ${C.gold}, ${C.ember})`,
+                color: '#3b0d00',
+                border: '5px solid #fff',
+              }
+        }
       >
-        {typing ? 'SKIP ⏩' : last ? 'START THE HUNT 🔥' : 'NEXT ▶'}
+        {talking ? '🐉 Ignis is talking…' : typing ? 'SKIP ⏩' : last ? 'START THE HUNT 🔥' : 'NEXT ▶'}
       </button>
 
       <button
