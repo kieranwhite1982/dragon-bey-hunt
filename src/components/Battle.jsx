@@ -33,6 +33,12 @@ const T = {
   skipAfter: 12000,
 };
 
+/* Hard ceiling on how long the victory screen will wait for the Dragon Strike
+   clip, armed when that clip starts. Comfortably clear of the 20s render so a
+   slow start doesn't truncate it, while still guaranteeing the finale can
+   never hang on a video that stalls. */
+const CLIP_BACKSTOP_MS = 32000;
+
 export default function Battle({ audio, onDone }) {
   const cvRef = useRef(null);
   const [phase, setPhase] = useState('intro');
@@ -57,26 +63,31 @@ export default function Battle({ audio, onDone }) {
   const clipHoldRef = useRef(!!BATTLE_FINISH);
   const vidRef = useRef(null);
 
+  /* Start the clip, and arm the backstop, when the Dragon Strike actually
+     begins -- NOT on mount. The finish phase lands ~42s in (5s intro + ~20s
+     clash + ~17s mash), so a timer started at mount would have expired long
+     before the clip ever played and the victory screen would have cut it off
+     part-way through.
+
+     A rejected autoplay fires no onEnded, so that releases the hold at once
+     rather than making them sit and wait out the backstop. */
   useEffect(() => {
-    if (!BATTLE_FINISH) return undefined;
+    if (!BATTLE_FINISH || phase !== 'finish') return undefined;
+
+    const v = vidRef.current;
+    if (v) {
+      const p = v.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {
+          clipHoldRef.current = false;
+        });
+      }
+    }
+
     const t = setTimeout(() => {
       clipHoldRef.current = false;
-    }, 25000);
+    }, CLIP_BACKSTOP_MS);
     return () => clearTimeout(t);
-  }, []);
-
-  /* A rejected autoplay fires no onEnded, so release the hold immediately
-     rather than making them sit through the 25s backstop. */
-  useEffect(() => {
-    if (!BATTLE_FINISH || phase !== 'finish') return;
-    const v = vidRef.current;
-    if (!v) return;
-    const p = v.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch(() => {
-        clipHoldRef.current = false;
-      });
-    }
   }, [phase]);
 
   const S = useRef({
