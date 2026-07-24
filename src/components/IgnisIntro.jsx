@@ -10,11 +10,15 @@ import { C } from '../theme.js';
    is intact — the screen is only ever reached from the title button tap, so
    it normally is. If play() is still rejected we surface a tap-to-play button
    rather than sitting on a black rectangle. */
-/* The Flow clip is 1280x720 landscape; the phone is portrait.
-   'contain' shows the whole frame but letterboxes it into a thin strip.
-   'cover'  fills the screen but crops the left and right off.
-   Switch this one word after you have watched it on the actual phone. */
-const INTRO_FIT = 'contain';
+/* The Flow clip is 720x1280 portrait (9:16), generated for this screen.
+   Modern phones are taller than 9:16 (20:9 is typical), so 'cover' fills
+   the screen edge to edge and trims ~10% off each SIDE. That's the right
+   trade here: the frame is a full-bleed fire scene and the edges are the
+   least detailed part of it, so nothing readable is lost.
+   'contain' is the fallback — whole frame, thin letterbox bars top and
+   bottom against the gradient. Switch this one word if a phone crops
+   something you care about. */
+const INTRO_FIT = 'cover';
 
 export default function IgnisIntro({ onDone }) {
   const vidRef = useRef(null);
