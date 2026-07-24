@@ -4,3 +4,6 @@ dev-dist/
 .DS_Store
 *.local
 .vite/
+
+# Uncompressed source art/video, kept locally out of the bundle
+.originals/
