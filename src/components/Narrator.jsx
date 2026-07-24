@@ -2,11 +2,20 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Dragon from './Dragon.jsx';
 import { SCRIPT } from '../data/stages.js';
 import { speakLine, stopSpeaking } from '../audio/speech.js';
+import { WYRM_PORTRAIT } from '../optionalAssets.js';
 import { C } from '../theme.js';
 
 /* The typewriter is decorative. Every line is fully on screen in large type
    before the Next button does anything useful, so if the voice is off (or the
    device has none) the briefing still reads. */
+
+/* Index of the line where Ignis first names the Shadow Wyrm (data/stages.js
+   SCRIPT[1]). Hardcoded rather than matched by content — the script order is
+   fixed by design (CLAUDE.md), and a content match would only make this
+   silently stop firing if the line is ever reworded. Optional: if no
+   wyrm-portrait.* is dropped in public/, this line plays exactly as it
+   always has. */
+const WYRM_LINE = 1;
 export default function Narrator({ audio, voiceOn, onFinish }) {
   const [i, setI] = useState(0);
   const [shown, setShown] = useState('');
@@ -53,7 +62,25 @@ export default function Narrator({ audio, voiceOn, onFinish }) {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 text-center">
-      <Dragon speaking={typing} fire={i === SCRIPT.length - 1} size={165} />
+      <div className="relative">
+        <Dragon speaking={typing} fire={i === SCRIPT.length - 1} size={165} />
+        {WYRM_PORTRAIT && i === WYRM_LINE && (
+          <img
+            key="wyrm-cameo"
+            src={WYRM_PORTRAIT}
+            alt="The Shadow Wyrm"
+            className="pop absolute object-cover rounded-full"
+            style={{
+              width: 74,
+              height: 74,
+              top: -8,
+              right: -10,
+              border: `3px solid ${C.shadow}`,
+              boxShadow: `0 0 24px ${C.shadowDeep}`,
+            }}
+          />
+        )}
+      </div>
 
       <div
         className="mt-4 w-full max-w-sm rounded-3xl px-5 py-4"

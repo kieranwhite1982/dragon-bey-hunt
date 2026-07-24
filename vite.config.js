@@ -94,6 +94,7 @@ export default defineConfig({
     __BUILD_VERSION__: JSON.stringify(buildVersion()),
     __IGNIS_PORTRAIT__: JSON.stringify(findOptional('ignis-portrait')),
     __IGNIS_INTRO__: JSON.stringify(findOptional('ignis-intro')),
+    __WYRM_PORTRAIT__: JSON.stringify(findOptional('wyrm-portrait')),
   },
   build: {
     target: 'es2018',
