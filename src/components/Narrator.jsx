@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Dragon from './Dragon.jsx';
+import ConfirmSkip from './ConfirmSkip.jsx';
 import { SCRIPT } from '../data/stages.js';
 import { SCRIPT_VIDEOS, WYRM_PORTRAIT } from '../optionalAssets.js';
 import { C } from '../theme.js';
@@ -197,13 +198,14 @@ export default function Narrator({ audio, onFinish }) {
         {talking ? '🐉 Ignis is talking…' : typing ? 'SKIP ⏩' : last ? 'START THE HUNT 🔥' : 'NEXT ▶'}
       </button>
 
-      <button
-        onClick={onFinish}
+      <ConfirmSkip
+        onSkip={onFinish}
+        label="skip the whole intro"
+        armedLabel="tap again to skip it all"
         className="mt-3 text-xs font-bold"
         style={{ color: 'rgba(255,255,255,0.45)' }}
-      >
-        skip the whole intro
-      </button>
+        armedStyle={{ color: C.flame }}
+      />
     </div>
   );
 }

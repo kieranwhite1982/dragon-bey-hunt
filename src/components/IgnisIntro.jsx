@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import ConfirmSkip from './ConfirmSkip.jsx';
 import { IGNIS_INTRO, INTRO_IS_VIDEO } from '../optionalAssets.js';
 import { C } from '../theme.js';
 
@@ -81,13 +82,13 @@ export default function IgnisIntro({ onDone }) {
         </div>
       )}
 
-      <button
-        onClick={onDone}
+      <ConfirmSkip
+        onSkip={onDone}
+        label="SKIP ⏩"
         className="absolute bottom-4 right-4 px-5 py-3 rounded-full font-black text-sm"
         style={{ background: 'rgba(255,255,255,0.16)', color: '#fff', border: '2px solid rgba(255,255,255,0.4)' }}
-      >
-        SKIP ⏩
-      </button>
+        armedStyle={{ background: C.flame, color: '#fff', border: '2px solid #fff' }}
+      />
     </div>
   );
 }

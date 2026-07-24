@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import ConfirmSkip from './ConfirmSkip.jsx';
 import { BATTLE_FINISH, IGNIS_PORTRAIT, WYRM_PORTRAIT } from '../optionalAssets.js';
 import { C } from '../theme.js';
 
@@ -620,13 +621,14 @@ export default function Battle({ audio, onDone }) {
         )}
 
         {showSkip && phase !== 'win' && (
-          <button
-            onClick={() => doneRef.current()}
+          <ConfirmSkip
+            onSkip={() => doneRef.current()}
+            label="skip"
+            armedLabel="tap again"
             className="absolute bottom-2 left-2 text-[10px] font-bold px-2 py-1 rounded"
             style={{ color: 'rgba(255,255,255,0.28)', background: 'rgba(255,255,255,0.06)' }}
-          >
-            skip
-          </button>
+            armedStyle={{ color: '#fff', background: C.flame }}
+          />
         )}
       </div>
 
