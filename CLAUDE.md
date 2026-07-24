@@ -48,5 +48,7 @@ Push to `main` → GitHub Actions → Pages. `base` in `vite.config.js` is
 ## Optional assets
 
 Drop `ignis-portrait.*` or `ignis-intro.*` into `public/` and rebuild.
+Generation prompts for both (and for the unwired ones) live in
+`docs/FLOW-PROMPTS.md`. Anything generated in Flow must be **9:16 portrait**.
 `vite.config.js` detects them at build time and bakes the filename in as a
 define — no runtime probing, so they behave identically offline.
