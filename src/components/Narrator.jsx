@@ -1,13 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Dragon from './Dragon.jsx';
 import { SCRIPT } from '../data/stages.js';
-import { playVoice, stopVoice, resumeVoice } from '../audio/voiceover.js';
-import { WYRM_PORTRAIT } from '../optionalAssets.js';
+import { SCRIPT_VIDEOS, WYRM_PORTRAIT } from '../optionalAssets.js';
 import { C } from '../theme.js';
 
-/* The typewriter is decorative. Every line is fully on screen in large type
-   before the Next button does anything useful, so if the voice is off (or the
-   device has none) the briefing still reads. */
+/* Each of the six briefing lines is either a talking-dragon clip (Ignis
+   says it himself, in the voice from the Flow renders) or, if that clip
+   is missing, the animated SVG dragon plus the line in large type for the
+   boys to read aloud. No speech synthesis either way -- the device's TTS
+   voice was worse than no voice at all.
+
+   The line is on screen in full underneath regardless, so a clip that
+   fails to load or gets skipped never costs them the instructions. */
 
 /* Index of the line where Ignis first names the Shadow Wyrm (data/stages.js
    SCRIPT[1]). Hardcoded rather than matched by content — the script order is
@@ -16,10 +20,14 @@ import { C } from '../theme.js';
    wyrm-portrait.* is dropped in public/, this line plays exactly as it
    always has. */
 const WYRM_LINE = 1;
-export default function Narrator({ audio, voiceOn, onFinish }) {
+
+export default function Narrator({ audio, onFinish }) {
   const [i, setI] = useState(0);
   const [shown, setShown] = useState('');
   const typingRef = useRef(null);
+  const vidRef = useRef(null);
+
+  const clip = SCRIPT_VIDEOS[`script-${i}`] || null;
 
   const type = useCallback((line) => {
     setShown('');
@@ -33,34 +41,37 @@ export default function Narrator({ audio, voiceOn, onFinish }) {
   }, []);
 
   useEffect(() => {
-    /* Releases SCRIPT[0]'s speech if App.jsx queued-and-paused it rather than
-       speaking it straight away (see primeVoice in audio/voiceover.js) -- a
-       harmless no-op if there was nothing to release, so this always runs
-       regardless of whether a cold-open video came first. Text and voice
-       start together right here. */
-    resumeVoice();
     type(SCRIPT[0]);
     return () => clearInterval(typingRef.current);
   }, [type]);
 
-  const typing = shown.length < SCRIPT[i].length;
+  /* Autoplay each line's clip as it comes up. The gesture chain from the
+     tap that advanced the line keeps sound allowed; a rejected play() needs
+     no handling here because the line is already on screen in full. */
+  useEffect(() => {
+    if (!clip) return;
+    const v = vidRef.current;
+    if (!v) return;
+    v.currentTime = 0;
+    const p = v.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  }, [clip, i]);
 
-  /* Speech fires synchronously in here — this is a real tap handler, which is
-     the only thing Android Chrome will honour. */
+  const typing = shown.length < SCRIPT[i].length;
+  const last = i === SCRIPT.length - 1;
+
   const next = () => {
     if (typing) {
       clearInterval(typingRef.current);
       setShown(SCRIPT[i]);
       return;
     }
-    if (i < SCRIPT.length - 1) {
+    if (!last) {
       const ni = i + 1;
-      playVoice(`script-${ni}`, SCRIPT[ni], voiceOn);
       audio.grumble();
       setI(ni);
       type(SCRIPT[ni]);
     } else {
-      stopVoice();
       audio.roar(1.2);
       onFinish();
     }
@@ -69,7 +80,25 @@ export default function Narrator({ audio, voiceOn, onFinish }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 text-center">
       <div className="relative">
-        <Dragon speaking={typing} fire={i === SCRIPT.length - 1} size={165} />
+        {clip ? (
+          <video
+            ref={vidRef}
+            key={clip}
+            src={clip}
+            className="rounded-3xl"
+            style={{
+              width: 200,
+              height: 200,
+              objectFit: 'cover',
+              border: `4px solid ${C.gold}`,
+              boxShadow: `0 0 34px ${C.ember}`,
+            }}
+            playsInline
+            autoPlay
+          />
+        ) : (
+          <Dragon speaking={typing} fire={last} size={165} />
+        )}
         {WYRM_PORTRAIT && i === WYRM_LINE && (
           <img
             key="wyrm-cameo"
@@ -120,14 +149,11 @@ export default function Narrator({ audio, voiceOn, onFinish }) {
           border: '5px solid #fff',
         }}
       >
-        {typing ? 'SKIP ⏩' : i === SCRIPT.length - 1 ? 'START THE HUNT 🔥' : 'NEXT ▶'}
+        {typing ? 'SKIP ⏩' : last ? 'START THE HUNT 🔥' : 'NEXT ▶'}
       </button>
 
       <button
-        onClick={() => {
-          stopVoice();
-          onFinish();
-        }}
+        onClick={onFinish}
         className="mt-3 text-xs font-bold"
         style={{ color: 'rgba(255,255,255,0.45)' }}
       >

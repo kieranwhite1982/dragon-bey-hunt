@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { STAGES, SCRIPT } from './data/stages.js';
+import { STAGES } from './data/stages.js';
 import useAudio from './audio/useAudio.js';
-import { useVoiceStatus } from './audio/speech.js';
-import { playVoice, primeVoice, stopVoice } from './audio/voiceover.js';
 import useWakeLock from './hooks/useWakeLock.js';
-import { clearRun, loadRun, saveRun, usePrefs } from './hooks/useSavedRun.js';
+import { clearRun, loadRun, saveRun } from './hooks/useSavedRun.js';
 import { IGNIS_INTRO, WYRM_SMASH, IGNIS_VICTORY } from './optionalAssets.js';
 
 import Dragon from './components/Dragon.jsx';
@@ -35,8 +33,6 @@ export default function App() {
   const [parts, setParts] = useState([]);
   const [parent, setParent] = useState(false);
 
-  const { voiceOn, setVoiceOn } = usePrefs();
-  const voiceCount = useVoiceStatus();
   const [saved, setSaved] = useState(() => loadRun());
   const tapRef = useRef(0);
   const tapTimer = useRef(null);
@@ -58,7 +54,6 @@ export default function App() {
     return () => clearTimeout(id);
   }, [screen, step, stageIdx]);
 
-  useEffect(() => () => stopVoice(), []);
   useEffect(() => () => clearTimeout(tapTimer.current), []);
 
   /* Autosave. If the phone locks or the tab is evicted mid-hunt, the title
@@ -76,7 +71,6 @@ export default function App() {
       audio.blip(900, 0.12, 'square', 0.2);
       setTimeout(() => audio.blip(1300, 0.16, 'square', 0.2), 110);
       setWrongId(null);
-      playVoice(`found-${stage.roomId}`, `Yes! Run to ${stage.roomName}!`, voiceOn);
       setStep('radar');
     } else {
       /* Wrong room shakes and grumbles. No penalty — guessing is half the
@@ -88,9 +82,8 @@ export default function App() {
   };
 
   const onFound = useCallback(() => {
-    playVoice(`spot-${stage.roomId}`, stage.spot, voiceOn);
     setStep('grab');
-  }, [stage, voiceOn]);
+  }, []);
 
   const onSealBroken = useCallback(() => {
     setParts((p) => [...p, stage.part]);
@@ -98,7 +91,6 @@ export default function App() {
   }, [stage]);
 
   const nextStage = () => {
-    stopVoice();
     if (stageIdx === STAGES.length - 1) {
       setScreen('battle');
     } else {
@@ -123,7 +115,6 @@ export default function App() {
   };
 
   const resetAll = () => {
-    stopVoice();
     clearRun();
     setSaved(null);
     setScreen('title');
@@ -135,19 +126,11 @@ export default function App() {
   };
 
   const beginHunt = () => {
-    /* Everything that needs a user gesture rides this one tap: the audio
-       context unlock and the very first speech line. */
+    /* This tap unlocks the audio context for the whole session -- every
+       cutscene and narrator clip that follows plays with sound because of
+       it, so nothing else needs a gesture of its own. */
     audio.unlock();
     audio.roar(1.2);
-    if (IGNIS_INTRO) {
-      /* The cold-open video has its own dialogue track. Queue this line now
-         (Android requires the call itself happen in this tap) but hold it
-         silent -- Narrator.jsx releases it the moment its text is on screen,
-         however many cutscenes played first. */
-      primeVoice('script-0', SCRIPT[0], voiceOn);
-    } else {
-      playVoice('script-0', SCRIPT[0], voiceOn);
-    }
     setScreen(IGNIS_INTRO ? 'coldopen' : WYRM_SMASH ? 'theft' : 'brief');
   };
 
@@ -171,9 +154,6 @@ export default function App() {
       {parent && (
         <ParentPanel
           onClose={() => setParent(false)}
-          voiceOn={voiceOn}
-          setVoiceOn={setVoiceOn}
-          voiceCount={voiceCount}
           onReset={resetAll}
           onJump={(i) => {
             setStageIdx(i);
@@ -219,7 +199,7 @@ export default function App() {
 
   /* ---------- NARRATOR ---------- */
   if (screen === 'brief') {
-    return shell(<Narrator audio={audio} voiceOn={voiceOn} onFinish={() => setScreen('hunt')} />);
+    return shell(<Narrator audio={audio} onFinish={() => setScreen('hunt')} />);
   }
 
   /* ---------- BATTLE ---------- */

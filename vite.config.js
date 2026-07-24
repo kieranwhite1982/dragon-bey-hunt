@@ -30,30 +30,26 @@ function findOptional(stem) {
   }
 }
 
-/* Every spoken line in the game is fixed text (SCRIPT and STAGES never
-   change at runtime), so pre-recorded voice is a fixed, enumerable set of
-   16 files rather than something generated per playthrough. Same
-   build-time-only detection as findOptional above -- drop a file matching
-   one of these keys into public/voice/ and rebuild; anything missing falls
-   back to the device's speechSynthesis (see audio/voiceover.js). */
-const VOICE_KEYS = [
-  'script-0', 'script-1', 'script-2', 'script-3', 'script-4', 'script-5',
-  'found-pantry', 'found-laundry', 'found-study', 'found-lounge', 'found-garage',
-  'spot-pantry', 'spot-laundry', 'spot-study', 'spot-lounge', 'spot-garage',
-];
+/* The narrator's SCRIPT is six fixed lines, so each one is its own optional
+   video slot: public/script-0.mp4 .. script-5.mp4. Same build-time-only
+   detection as findOptional above -- Narrator.jsx plays the video for any
+   index that has one and falls back to silent on-screen text (no voice
+   synthesis) for any index that doesn't, so partial coverage is fine. */
+const SCRIPT_VIDEO_KEYS = ['script-0', 'script-1', 'script-2', 'script-3', 'script-4', 'script-5'];
 
-function findVoiceFiles() {
-  const dir = path.join(PUBLIC_DIR, 'voice');
+function findScriptVideos() {
   let files;
   try {
-    files = fs.readdirSync(dir);
+    files = fs.readdirSync(PUBLIC_DIR);
   } catch {
     return {};
   }
   const map = {};
-  for (const key of VOICE_KEYS) {
-    const hit = files.filter((f) => f.toLowerCase().startsWith(key + '.')).sort()[0];
-    if (hit) map[key] = `voice/${hit}`;
+  for (const key of SCRIPT_VIDEO_KEYS) {
+    const hit = files
+      .filter((f) => f.toLowerCase().startsWith(key + '.') && /\.(mp4|webm|m4v|mov)$/i.test(f))
+      .sort()[0];
+    if (hit) map[key] = hit;
   }
   return map;
 }
@@ -125,7 +121,7 @@ export default defineConfig({
     __WYRM_PORTRAIT__: JSON.stringify(findOptional('wyrm-portrait')),
     __WYRM_SMASH__: JSON.stringify(findOptional('wyrm-smash')),
     __IGNIS_VICTORY__: JSON.stringify(findOptional('ignis-victory')),
-    __VOICE_FILES__: JSON.stringify(findVoiceFiles()),
+    __SCRIPT_VIDEOS__: JSON.stringify(findScriptVideos()),
   },
   build: {
     target: 'es2018',
